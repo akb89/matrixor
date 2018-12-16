@@ -9,9 +9,9 @@ import argparse
 import logging
 import logging.config
 
-import numpy as np
-
 from ast import literal_eval
+
+import numpy as np
 
 import matrixor.utils.config as cutils
 import matrixor.transformation.transformator as trsfor
@@ -48,9 +48,13 @@ def _generate(args):
     _print_dict(args.model_2, n_items_dict_2)
 
 
-def _save(path, matrix):
+def _save(path, words, matrix):
     with open(path, 'w') as matrix_stream:
-        pass
+        for idx, word in enumerate(words):
+            print('{}\t{}'.format(word, np.array2string(matrix[idx],
+                                                        separator=',',
+                                                        max_line_width=1e10)),
+                  file=matrix_stream)
 
 
 def _get_line_count(model):
@@ -101,24 +105,64 @@ def _compare(args):
     B, _ = _load(args.model_2)
     for idx in range(A.shape[0]):
         sim = _get_cosine_sim(A[idx], B[idx])
-        print('word = {} sim = {}'.format(words[idx], sim))
+        print('word: {} sim = {}'.format(words[idx], sim))
     print('RMSE = {}'.format(rmse(A, B)))
 
 
 def _align(args):
     A, words = _load(args.model_1)
     B, _ = _load(args.model_2)
-    # for idx in range(A.shape[0]):
-    #     sim = _get_cosine_sim(A[idx], B[idx])
-    #     print('word = {} sim = {}'.format(words[idx], sim))
-    # print(rmse(A, B))
     AC, RBC = trsfor.align_ao_centered(A, B)
-    for idx in range(AC.shape[0]):
-        sim = _get_cosine_sim(AC[idx], RBC[idx])
-        print('word = {} sim = {}'.format(words[idx], sim))
-    print(rmse(AC, RBC))
-    #_save('{}.aligned'.format(args.model_1), words, AC)
-    #_save('{}.aligned'.format(args.model_2), words, RBC)
+    _save('{}.aligned'.format(args.model_1), words, AC)
+    _save('{}.aligned'.format(args.model_2), words, RBC)
+
+
+def _load_vocab(vocab_filepath):
+    with open(vocab_filepath, 'r') as vocab_stream:
+        return [line.strip() for line in vocab_stream]
+
+
+def _load_word_vec_dict(model_filepath):
+    word_vec_dict = {}
+    with open(model_filepath, 'r') as model_stream:
+        for line in model_stream:
+            line = line.strip()
+            items = line.split('\t')
+            word_vec_dict[items[0]] = np.fromiter(literal_eval(items[1]),
+                                                  dtype=float)
+    return word_vec_dict
+
+
+def _get_neighbours_by_vector(word_vec_dict, vector):
+    sim_dict = {word: _get_cosine_sim(word_vector, vector)
+                for word, word_vector in word_vec_dict.items()}
+    return [item[0] for item in sorted(sim_dict.items(), key=lambda x: x[1],
+                                       reverse=True)]
+
+
+def _update_rr_and_count(relative_ranks, count, rank):
+    relative_rank = 1.0 / float(rank)
+    relative_ranks += relative_rank
+    count += 1
+    logger.info('Rank, Relative Rank = {} {}'.format(rank, relative_rank))
+    logger.info('MRR = {}'.format(relative_ranks/count))
+    return relative_ranks, count
+
+
+def _test(args):
+    vocab = _load_vocab(args.vocab)
+    relative_ranks = 0.0
+    count = 0
+    logger.info('Checking MRR on definition dataset of two background models')
+    embeddings_1 = _load_word_vec_dict(args.model_1)
+    embeddings_2 = _load_word_vec_dict(args.model_2)
+    for word in vocab:
+        logger.info('word = {}'.format(word))
+        nns = _get_neighbours_by_vector(embeddings_1, embeddings_2[word])
+        logger.info('10 most similar words: {}'.format(nns[:10]))
+        rank = nns.index(word) + 1
+        rranks, count = _update_rr_and_count(relative_ranks, count, rank)
+    logger.info('Final MRR =  {}'.format(rranks/count))
 
 
 def main():
@@ -146,7 +190,12 @@ def main():
         'compare', formatter_class=argparse.RawTextHelpFormatter,
         parents=[parser_template],
         help='compare two vector spaces')
-    parser_compare.set_default(func=_compare)
-
+    parser_compare.set_defaults(func=_compare)
+    parser_test = subparsers.add_parser(
+        'test', formatter_class=argparse.RawTextHelpFormatter,
+        parents=[parser_template],
+        help='compare two datasets on a list of words')
+    parser_test.add_argument('--vocab', help='a list of words')
+    parser_test.set_defaults(func=_test)
     args = parser.parse_args()
     args.func(args)
