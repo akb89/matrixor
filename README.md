@@ -7,6 +7,12 @@ Under the matrixor directory:
 python3 setup.py install
 ```
 
+## Download
+Download some models to play around with:
+```
+wget http://129.194.21.122/~kabbach/matrixor.models.7z
+```
+
 ## Run
 
 ### Align
@@ -38,7 +44,7 @@ matrixor compare \
   --model-2 /abs/path/to/yyy.vec.aligned
 ```
 
-### Generate 
+### Generate
 If you want to generate a sample of `n` elements from a `.vec` file, run:
 ```
 matrixor generate \

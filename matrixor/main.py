@@ -167,17 +167,19 @@ def _update_rr_and_count(relative_ranks, count, rank):
 def _test(args):
     logger.info('Testing input models on the specified vocab')
     vocab = _load_vocab(args.vocab)
-    relative_ranks = 0.0
+    rranks = 0.0
     count = 0
     logger.info('Checking MRR on definition dataset of two background models')
+    logger.info('Loading model {}'.format(args.model_1))
     embeddings_1 = _load_word_vec_dict(args.model_1)
+    logger.info('Loading model {}'.format(args.model_2))
     embeddings_2 = _load_word_vec_dict(args.model_2)
     for word in vocab:
         logger.info('word = {}'.format(word))
         nns = _get_neighbours_by_vector(embeddings_1, embeddings_2[word])
         logger.info('10 most similar words: {}'.format(nns[:10]))
         rank = nns.index(word) + 1
-        rranks, count = _update_rr_and_count(relative_ranks, count, rank)
+        rranks, count = _update_rr_and_count(rranks, count, rank)
     logger.info('Final MRR =  {}'.format(rranks/count))
 
 
