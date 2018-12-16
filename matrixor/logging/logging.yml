@@ -9,12 +9,12 @@ handlers:
     class: logging.StreamHandler
     formatter: simple
 loggers:
-  matrixator.main:
+  matrixor.main:
     level: INFO
     handlers: [console]
-  matrixator.utils:
+  matrixor.utils:
     level: INFO
     handlers: [console]
-  matrixator.transformation:
+  matrixor.transformation:
     level: INFO
     handlers: [console]

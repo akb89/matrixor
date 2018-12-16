@@ -42,3 +42,11 @@ matrixor generate \
   --model-2 /abs/path/to/yyy.vec \
   --num n
 ```
+
+## Baseline on the definitions dataset
+```
+matrixor test \
+  --model-1 /abs/path/to/xxx.vec.aligned  \
+  --model-2 /abs/path/to/yyy.vec.aligned \
+  --vocab /abs/path/to/definitions/.vocab
+```

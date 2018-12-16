@@ -41,10 +41,15 @@ def _get_dict(model):
 
 
 def _generate(args):
+    logger.info('Generating identical subsets from input embeddings...')
+    logger.info('Loading word:vector dict from {}'.format(args.model_1))
     dict_1 = _get_dict(args.model_1)
+    logger.info('Loading word:vector dict from {}'.format(args.model_2))
     dict_2 = _get_dict(args.model_2)
+    logger.info('Subsampling loaded dicts...')
     n_items_dict_1 = {k: dict_1[k] for k in list(dict_1)[:args.num]}
     n_items_dict_2 = {key: dict_2[key] for key in n_items_dict_1.keys()}
+    logger.info('Saving subsampled dicts...')
     _print_dict(args.model_1, n_items_dict_1, args.num)
     _print_dict(args.model_2, n_items_dict_2, args.num)
 
@@ -102,8 +107,12 @@ def rmse(x, y):
 
 
 def _compare(args):
+    logger.info('Comparing models...')
+    logger.info('Loading model {}'.format(args.model_1))
     A, words = _load(args.model_1)
+    logger.info('Loading model {}'.format(args.model_2))
     B, _ = _load(args.model_2)
+    logger.info('Computing similarities...')
     for idx in range(A.shape[0]):
         sim = _get_cosine_sim(A[idx], B[idx])
         print('word: {} sim = {}'.format(words[idx], sim))
@@ -111,9 +120,14 @@ def _compare(args):
 
 
 def _align(args):
+    logger.info('Aligning input models...')
+    logger.info('Loading {}'.format(args.model_1))
     A, words = _load(args.model_1)
+    logger.info('Loading {}'.format(args.model_2))
     B, _ = _load(args.model_2)
+    logger.info('Transforming matrices...')
     AC, RBC = trsfor.align_ao_centered(A, B)
+    logger.info('Saving aligned models...')
     _save('{}.aligned'.format(args.model_1), words, AC)
     _save('{}.aligned'.format(args.model_2), words, RBC)
 
@@ -151,6 +165,7 @@ def _update_rr_and_count(relative_ranks, count, rank):
 
 
 def _test(args):
+    logger.info('Testing input models on the specified vocab')
     vocab = _load_vocab(args.vocab)
     relative_ranks = 0.0
     count = 0
