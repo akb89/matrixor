@@ -22,7 +22,7 @@ setup(
     license='MIT',
     keywords=['matrix', 'linear transformation'],
     platforms=['any'],
-    packages=['matrixor'],
+    packages=['matrixor', 'matrixor.transformation'],
     package_data={'matrixor': ['logging/*.yml']},
     include_package_data=True,
     entry_points={
