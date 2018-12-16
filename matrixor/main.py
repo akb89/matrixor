@@ -10,6 +10,7 @@ import logging
 import logging.config
 
 from ast import literal_eval
+from collections import OrderedDict
 
 import numpy as np
 
@@ -23,20 +24,20 @@ logging.config.dictConfig(
 logger = logging.getLogger(__name__)
 
 
-def _print_dict(model, n_items_dict):
-    with open('{}.test'.format(model), 'w') as test_stream:
+def _print_dict(model, n_items_dict, num_items):
+    with open('{}.{}.test'.format(model, num_items), 'w') as test_stream:
         for key, value in sorted(n_items_dict.items()):
             print('{}\t{}'.format(key, value), file=test_stream)
 
 
 def _get_dict(model):
-    model_map = {}
+    model_dict = OrderedDict()
     with open(model, 'r') as model_stream:
         for line in model_stream:
             line = line.strip()
             items = line.split('\t')
-            model_map[items[0]] = items[1]
-    return model_map
+            model_dict[items[0]] = items[1]
+    return model_dict
 
 
 def _generate(args):
@@ -44,8 +45,8 @@ def _generate(args):
     dict_2 = _get_dict(args.model_2)
     n_items_dict_1 = {k: dict_1[k] for k in list(dict_1)[:args.num]}
     n_items_dict_2 = {key: dict_2[key] for key in n_items_dict_1.keys()}
-    _print_dict(args.model_1, n_items_dict_1)
-    _print_dict(args.model_2, n_items_dict_2)
+    _print_dict(args.model_1, n_items_dict_1, args.num)
+    _print_dict(args.model_2, n_items_dict_2, args.num)
 
 
 def _save(path, words, matrix):
