@@ -9,10 +9,8 @@ import argparse
 import logging
 import logging.config
 
-from ast import literal_eval
-from collections import OrderedDict
-
 import numpy as np
+from scipy import spatial as sp
 
 import matrixor.utils.config as cutils
 import matrixor.transformation.transformator as trsfor
@@ -24,135 +22,71 @@ logging.config.dictConfig(
 logger = logging.getLogger(__name__)
 
 
-def _print_dict(model, n_items_dict, num_items):
-    with open('{}.{}.test'.format(model, num_items), 'w') as test_stream:
-        for key, value in sorted(n_items_dict.items()):
-            print('{}\t{}'.format(key, value), file=test_stream)
-
-
-def _get_dict(model):
-    model_dict = OrderedDict()
-    with open(model, 'r') as model_stream:
-        for line in model_stream:
-            line = line.strip()
-            items = line.split('\t')
-            model_dict[items[0]] = items[1]
-    return model_dict
-
-
-def _generate(args):
-    logger.info('Generating identical subsets from input embeddings...')
-    logger.info('Loading word:vector dict from {}'.format(args.model_1))
-    dict_1 = _get_dict(args.model_1)
-    logger.info('Loading word:vector dict from {}'.format(args.model_2))
-    dict_2 = _get_dict(args.model_2)
-    logger.info('Subsampling loaded dicts...')
-    n_items_dict_1 = {k: dict_1[k] for k in list(dict_1)[:args.num]}
-    n_items_dict_2 = {key: dict_2[key] for key in n_items_dict_1.keys()}
-    logger.info('Saving subsampled dicts...')
-    _print_dict(args.model_1, n_items_dict_1, args.num)
-    _print_dict(args.model_2, n_items_dict_2, args.num)
-
-
-def _save(path, words, matrix):
-    with open(path, 'w') as matrix_stream:
-        for idx, word in enumerate(words):
-            print('{}\t{}'.format(word, np.array2string(matrix[idx],
-                                                        separator=',',
-                                                        max_line_width=1e10)),
-                  file=matrix_stream)
-
-
-def _get_line_count(model):
-    count = 0
-    with open(model, 'r') as model_stream:
-        for line in model_stream:
-            line = line.strip()
-            if line:
-                count += 1
-    return count
-
-
-def _get_vectors_dim(model):
-    with open(model, 'r') as model_stream:
-        for line in model_stream:
-            line = line.strip()
-            items = line.split('\t')
-            return len(literal_eval(items[1]))
-    return 0
-
-
-def _load(model):
-    words = []
-    num_rows = _get_line_count(model)
-    num_cols = _get_vectors_dim(model)
-    matrix = np.empty(shape=(num_rows, num_cols), dtype=float)
-    with open(model, 'r') as model_stream:
-        for idx, line in enumerate(model_stream):
-            line = line.strip()
-            if line:
-                items = line.split('\t')
-                words.append(items[0])
-                matrix[idx] = np.fromiter(literal_eval(items[1]), dtype=float)
-    return matrix, words
+def rmse(x, y):
+    """Return root mean squared error"""
+    return np.sqrt(((x - y) ** 2).mean())
 
 
 def _get_cosine_sim(x, y):
     return np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))
 
 
-def rmse(x, y):
-    """Return root mean squared error"""
-    return np.sqrt(((x - y) ** 2).mean())
-
-
 def _compare(args):
     logger.info('Comparing models...')
     logger.info('Loading model {}'.format(args.model_1))
-    A, words = _load(args.model_1)
+    A = np.load(args.model_1)
     logger.info('Loading model {}'.format(args.model_2))
-    B, _ = _load(args.model_2)
+    B = np.load(args.model_2)
+    vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec.aligned.npy')[0])
+    logger.info('Loading vocabulary from {}'.format(vocab_filepath))
+    words = _load_vocab(vocab_filepath)
     logger.info('Computing similarities...')
-    for idx in range(A.shape[0]):
-        sim = _get_cosine_sim(A[idx], B[idx])
-        print('word: {} sim = {}'.format(words[idx], sim))
-    print('RMSE = {}'.format(rmse(A, B)))
-
-
-def _align(args):
-    logger.info('Aligning input models...')
-    logger.info('Loading {}'.format(args.model_1))
-    A, words = _load(args.model_1)
-    logger.info('Loading {}'.format(args.model_2))
-    B, _ = _load(args.model_2)
-    logger.info('Transforming matrices...')
-    AC, RBC = trsfor.align_ao_centered(A, B)
-    logger.info('Saving aligned models...')
-    _save('{}.aligned'.format(args.model_1), words, AC)
-    _save('{}.aligned'.format(args.model_2), words, RBC)
+    results_filepath = os.path.join(os.path.dirname(args.model_1),
+                                    'compare.results')
+    logger.info('Saving results to {}'.format(results_filepath))
+    with open(results_filepath, 'w') as results_stream:
+        for idx in range(A.shape[0]):
+            sim = _get_cosine_sim(A[idx], B[idx])
+            print('word: {:20} sim = {}'.format(words[idx], sim),
+                  file=results_stream)
+        print('RMSE = {}'.format(rmse(A, B)), file=results_stream)
 
 
 def _load_vocab(vocab_filepath):
     with open(vocab_filepath, 'r') as vocab_stream:
-        return [line.strip() for line in vocab_stream]
+        return [line.strip().split('\t')[0] for line in vocab_stream]
 
 
-def _load_word_vec_dict(model_filepath):
-    word_vec_dict = {}
-    with open(model_filepath, 'r') as model_stream:
-        for line in model_stream:
-            line = line.strip()
-            items = line.split('\t')
-            word_vec_dict[items[0]] = np.fromiter(literal_eval(items[1]),
-                                                  dtype=float)
-    return word_vec_dict
+def _align(args):
+    logger.info('Aligning input models...')
+    model_1_vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec.npy')[0])
+    model_2_vocab_filepath = '{}.vocab'.format(args.model_2.rsplit('.vec.npy')[0])
+    logger.info('Loading model-1 vocabulary from {}'
+                .format(model_1_vocab_filepath))
+    vocab_1 = _load_vocab(model_1_vocab_filepath)
+    logger.info('Loading model-2 vocabulary from {}'
+                .format(model_2_vocab_filepath))
+    vocab_2 = _load_vocab(model_2_vocab_filepath)
+    if vocab_1 != vocab_2:
+        raise Exception(
+            'The specified models do not have the same vocabulary. Matrixor '
+            'cannot align embeddings which do not have the same number of '
+            'rows and columns')
+    logger.info('Loading {}'.format(args.model_1))
+    A = np.load(args.model_1)
+    logger.info('Loading {}'.format(args.model_2))
+    B = np.load(args.model_2)
+    logger.info('Transforming matrices...')
+    AC, RBC = trsfor.align_ao_centered(A, B)
+    logger.info('Saving aligned models...')
+    np.save('{}.aligned'.format(args.model_1.rsplit('.npy')[0]), AC)
+    np.save('{}.aligned'.format(args.model_2.rsplit('.npy')[0]), RBC)
 
 
-def _get_neighbours_by_vector(word_vec_dict, vector):
-    sim_dict = {word: _get_cosine_sim(word_vector, vector)
-                for word, word_vector in word_vec_dict.items()}
-    return [item[0] for item in sorted(sim_dict.items(), key=lambda x: x[1],
-                                       reverse=True)]
+def _get_neighbours_idx(matrix, vector):
+    v = vector.reshape(1, -1)
+    sims = sp.distance.cdist(matrix, v, 'cosine').reshape(-1)
+    return np.argsort(sims)
 
 
 def _update_rr_and_count(relative_ranks, count, rank):
@@ -166,21 +100,34 @@ def _update_rr_and_count(relative_ranks, count, rank):
 
 def _test(args):
     logger.info('Testing input models on the specified vocab')
+    results_filepath = os.path.join(os.path.dirname(args.model_1),
+                                    'def.test.results')
+    logger.info('Saving results to {}'.format(results_filepath))
     vocab = _load_vocab(args.vocab)
+    model_vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec')[0])
+    words = _load_vocab(model_vocab_filepath)
     rranks = 0.0
     count = 0
     logger.info('Checking MRR on definition dataset of two background models')
     logger.info('Loading model {}'.format(args.model_1))
-    embeddings_1 = _load_word_vec_dict(args.model_1)
+    embeddings_1 = np.load(args.model_1)
     logger.info('Loading model {}'.format(args.model_2))
-    embeddings_2 = _load_word_vec_dict(args.model_2)
-    for word in vocab:
-        logger.info('word = {}'.format(word))
-        nns = _get_neighbours_by_vector(embeddings_1, embeddings_2[word])
-        logger.info('10 most similar words: {}'.format(nns[:10]))
-        rank = nns.index(word) + 1
-        rranks, count = _update_rr_and_count(rranks, count, rank)
-    logger.info('Final MRR =  {}'.format(rranks/count))
+    embeddings_2 = np.load(args.model_2)
+    with open(results_filepath, 'w') as results_stream:
+        print('model-1: {}'.format(args.model_1), file=results_stream)
+        print('model-2: {}'.format(args.model_2), file=results_stream)
+        print('vocab: {}'.format(args.vocab), file=results_stream)
+        for word in vocab:
+            logger.info('word = {}'.format(word))
+            idx = words.index(word)
+            nns = _get_neighbours_idx(embeddings_1, embeddings_2[idx])
+            #logger.info('10 most similar words: {}'.format([words[idx] for idx in nns][:10]))
+            rank = np.where(nns==idx)[0][0] + 1
+            rranks, count = _update_rr_and_count(rranks, count, rank)
+            print('word: {:15} rank = {:7} MRR = {}'
+                  .format(word, rank, rranks/count), file=results_stream)
+        logger.info('Final MRR =  {}'.format(rranks/count))
+        print('Final MRR = {}'.format(rranks/count), file=results_stream)
 
 
 def main():
@@ -192,13 +139,6 @@ def main():
                                  help='first embeddings model')
     parser_template.add_argument('--model-2', required=True,
                                  help='second embeddings model')
-    parser_generate = subparsers.add_parser(
-        'generate', formatter_class=argparse.RawTextHelpFormatter,
-        parents=[parser_template],
-        help='generate test set with n items')
-    parser_generate.set_defaults(func=_generate)
-    parser_generate.add_argument('--num', type=int,
-                                 help='number of test instances')
     parser_align = subparsers.add_parser(
         'align', formatter_class=argparse.RawTextHelpFormatter,
         parents=[parser_template],
