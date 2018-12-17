@@ -37,7 +37,7 @@ def _compare(args):
     A = np.load(args.model_1)
     logger.info('Loading model {}'.format(args.model_2))
     B = np.load(args.model_2)
-    vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec.aligned.npy')[0])
+    vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec')[0])
     logger.info('Loading vocabulary from {}'.format(vocab_filepath))
     words = _load_vocab(vocab_filepath)
     logger.info('Computing similarities...')
@@ -59,8 +59,8 @@ def _load_vocab(vocab_filepath):
 
 def _align(args):
     logger.info('Aligning input models...')
-    model_1_vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec.npy')[0])
-    model_2_vocab_filepath = '{}.vocab'.format(args.model_2.rsplit('.vec.npy')[0])
+    model_1_vocab_filepath = '{}.vocab'.format(args.model_1.rsplit('.vec')[0])
+    model_2_vocab_filepath = '{}.vocab'.format(args.model_2.rsplit('.vec')[0])
     logger.info('Loading model-1 vocabulary from {}'
                 .format(model_1_vocab_filepath))
     vocab_1 = _load_vocab(model_1_vocab_filepath)
