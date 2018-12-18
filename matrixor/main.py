@@ -9,7 +9,10 @@ import argparse
 import logging
 import logging.config
 
+
 import numpy as np
+from tqdm import tqdm
+from gensim.models import Word2Vec
 from scipy import spatial as sp
 
 import matrixor.utils.config as cutils
@@ -130,6 +133,22 @@ def _test(args):
         print('Final MRR = {}'.format(rranks/count), file=results_stream)
 
 
+def _convert(args):
+    vectors_filepath = '{}.vec'.format(args.model)
+    vocab_filepath = '{}.vocab'.format(args.model)
+    model = Word2Vec.load(args.model)
+    vectors = np.empty(shape=(len(model.wv.vocab), model.vector_size), dtype=float)
+    logger.info('Saving vocabulary to {}'.format(vocab_filepath))
+    with open(vocab_filepath, 'w') as vocab_stream:
+        idx = 0
+        for item in tqdm(sorted(model.wv.vocab.items(), key=lambda x: (x[1].count, x[0]), reverse=True)):
+            print('{}\t{}'.format(item[0], item[1].count), file=vocab_stream)
+            vectors[idx] = model.wv.get_vector(item[0])
+            idx += 1
+    logger.info('Saving vectors to {}'.format(vectors_filepath))
+    np.save(vectors_filepath, vectors)
+
+
 def main():
     """Launch matrixor."""
     parser = argparse.ArgumentParser(prog='matrixor')
@@ -139,6 +158,12 @@ def main():
                                  help='first embeddings model')
     parser_template.add_argument('--model-2', required=True,
                                  help='second embeddings model')
+    parser_convert = subparsers.add_parser(
+        'convert', formatter_class=argparse.RawTextHelpFormatter,
+        help='convert a gensim model to matrixor .vec.npy format')
+    parser_convert.set_defaults(func=_convert)
+    parser_convert.add_argument('--model', required=True,
+                                help='absolute path to the gensim model')
     parser_align = subparsers.add_parser(
         'align', formatter_class=argparse.RawTextHelpFormatter,
         parents=[parser_template],

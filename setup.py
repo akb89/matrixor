@@ -31,7 +31,8 @@ setup(
             'matrixor = matrixor.main:main'
         ],
     },
-    install_requires=['numpy==1.15.4'],
+    install_requires=['PyYAML==3.13', 'numpy==1.15.4', 'scipy==1.1.0',
+                      'gensim==3.4.0', 'tqdm==4.28.1'],
     classifiers=['Development Status :: 2 - Pre-Alpha',
                  'Environment :: Web Environment',
                  'Intended Audience :: Developers',
