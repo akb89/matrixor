@@ -83,7 +83,7 @@ def _compare(args):
                   .format(word, args.name_2, neighbors_model_2),
                   file=results_stream)
             print('Intersection = {}%'.format(inter), file=results_stream)
-            print('RMSE = {}'.format(rmse(A, B)), file=results_stream)
+            #print('RMSE = {}'.format(rmse(A, B)), file=results_stream)
         if A.shape == B.shape:
             print('Average cosine = {}'.format(avg_sim / len(vocab)),
                   file=results_stream)
