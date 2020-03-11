@@ -22,7 +22,7 @@ setup(
     license='MIT',
     keywords=['matrix', 'linear transformation'],
     platforms=['any'],
-    packages=['matrixor', 'matrixor.transformation', 'matrixor.utils',
+    packages=['matrixor', 'matrixor.utils',
               'matrixor.logging', 'matrixor.exceptions'],
     package_data={'matrixor': ['logging/*.yml']},
     include_package_data=True,
@@ -31,8 +31,7 @@ setup(
             'matrixor = matrixor.main:main'
         ],
     },
-    install_requires=['PyYAML==3.13', 'numpy==1.15.4', 'scipy==1.1.0',
-                      'gensim==3.4.0', 'tqdm==4.28.1'],
+    install_requires=['pyyaml>=4.2b1', 'einsumt==0.9.1', 'scipy==1.2.0'],
     classifiers=['Development Status :: 2 - Pre-Alpha',
                  'Environment :: Web Environment',
                  'Intended Audience :: Developers',
