@@ -1,8 +1,13 @@
 import math
+
 import numpy as np
 import scipy.stats as stats
 
 import matrixor
+
+
+def pearson_correlation(x, y):
+    return stats.pearsonr(x, y)[0]
 
 
 def cosine_similarity(peer_v, query_v):
@@ -12,10 +17,6 @@ def cosine_similarity(peer_v, query_v):
     den_a = np.dot(peer_v, peer_v)
     den_b = np.dot(query_v, query_v)
     return num / (math.sqrt(den_a) * math.sqrt(den_b))
-
-
-def pearson_correlation(x, y):
-    return stats.pearsonr(x, y)[0]
 
 
 def test_center():
@@ -113,7 +114,6 @@ def test_ao_scaling_in_diff_config():
     print(pearson_correlation(A[:, 0], B[:, 0]))
     T = matrixor.apply_absolute_orientation_with_scaling(A, B)
     assert matrixor.root_mean_square_error(A, T) < 1e-15
-    # assert 1 == 2
 
     A = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
     B = np.array([[0, 0, 0, -1], [0, 0, -1, 0], [-1, 0, 0, 0], [0, -1, 0, 0]])
