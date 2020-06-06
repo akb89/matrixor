@@ -33,6 +33,7 @@ jobs:
         python -m pip install --upgrade pip
         python setup.py -q install
         pip install pylint pydocstyle pycodestyle pytest
+        pip install scipy==1.2.0
 
     # Runs a set of commands using the runners shell
     - name: Test with pytest
