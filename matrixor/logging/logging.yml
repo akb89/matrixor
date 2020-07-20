@@ -15,6 +15,3 @@ loggers:
   matrixor.utils:
     level: INFO
     handlers: [console]
-  matrixor.transformation:
-    level: INFO
-    handlers: [console]
