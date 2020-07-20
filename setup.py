@@ -16,7 +16,7 @@ setup(
     author_email='akb@3azouz.net',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    version='1.0.2',
+    version='1.0.4',
     url='https://github.com/akb89/matrixor',
     download_url='https://github.com/akb89/matrixor',
     license='MIT',
@@ -31,7 +31,7 @@ setup(
             'matrixor = matrixor.main:main'
         ],
     },
-    install_requires=['pyyaml>=4.2b1', 'einsumt==0.9.1', 'numpy==1.18.4'],
+    install_requires=['pyyaml>=4.2b1', 'numpy==1.19.0'],
     classifiers=['Development Status :: 5 - Production/Stable ',
                  'Environment :: Web Environment',
                  'Intended Audience :: Developers',

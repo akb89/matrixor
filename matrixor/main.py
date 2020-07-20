@@ -20,7 +20,6 @@ import logging
 import logging.config
 
 import numpy as np
-from einsumt import einsumt
 
 import matrixor.utils.config as cutils
 
@@ -47,7 +46,7 @@ def center(matrix):
 def compute_sum_inner_product(A, B):
     """Return sum of inner product between A and B."""
     # return np.diagonal(A @ B.T).sum()
-    return np.diagonal(einsumt('ij,ik->jk', A, B)).sum()  # much faster
+    return np.diagonal(np.einsum('ij,ik->jk', A, B)).sum()  # much faster
 
 
 def compute_scaling(A, B):
@@ -59,7 +58,7 @@ def compute_scaling(A, B):
 def compute_sum_outer_product(A, B):
     """Return sim of outer product between A and B."""
     # return B.T @ A
-    return einsumt('ij,ik->jk', B, A)  # much faster than above
+    return np.einsum('ij,ik->jk', B, A)  # much faster than above
 
 
 def apply_ao_rotation(A, B):
