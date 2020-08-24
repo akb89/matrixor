@@ -12,9 +12,6 @@ Implements algorithm 2.4 (AO+Scaling) of the paper:
     volume={abs/1806.01330}
 }
 """
-
-import os
-
 import argparse
 
 import numpy as np
