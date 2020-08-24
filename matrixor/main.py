@@ -16,19 +16,8 @@ Implements algorithm 2.4 (AO+Scaling) of the paper:
 import os
 
 import argparse
-import logging
-import logging.config
 
 import numpy as np
-
-import matrixor.utils.config as cutils
-
-
-logging.config.dictConfig(
-    cutils.load(
-        os.path.join(os.path.dirname(__file__), 'logging', 'logging.yml')))
-
-logger = logging.getLogger(__name__)
 
 __all__ = ('align', 'root_mean_square_error')
 
