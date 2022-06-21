@@ -28,7 +28,7 @@ setup(
             'matrixor = matrixor.main:main'
         ],
     },
-    install_requires=['numpy==1.19.0'],
+    install_requires=['numpy==1.22.0'],
     classifiers=['Development Status :: 5 - Production/Stable ',
                  'Environment :: Web Environment',
                  'Intended Audience :: Developers',
